@@ -1,10 +1,10 @@
 from flask import request, jsonify
 from . import auth_bp
 from app.models import User,Role
-from extenstions import db
+from extensions import db
 from config import Config  
 import jwt
-from datetime import timedelta,datetime
+from datetime import timedelta,datetime,timezone
 from functools import wraps
 
 def require_auth(f):
@@ -77,16 +77,16 @@ def require_permission(permission_name):
 def register():
     data = request.get_json()
     if "email" not in data:
-        return jsonify({'message':'необходимо заполнить email'}),404
+        return jsonify({'message':'необходимо заполнить email'}),400
     email = data['email']
     if "@" not in email:
         return jsonify({'message':"Email не валиден"}), 400
     if type(email) != str:
         return jsonify({'message': "Email должен быть строковым типом данных"})
     if 'password' not in data:
-        return jsonify({'message': 'Заполните все поля'}),404
+        return jsonify({'message': 'Заполните все поля'}),400
     if 'first_name' not in data or 'last_name' not in data:
-        return jsonify({'message': 'Заполните все поля'}),404
+        return jsonify({'message': 'Заполните все поля'}),400
     
     
 
@@ -129,7 +129,7 @@ def login():
 
     payload = {
         'user_id': exists.id,
-        'exp': datetime.utcnow() + timedelta(hours=1)
+        'exp': datetime.now(timezone.utc)+ timedelta(hours=1)
     }
     token = jwt.encode(payload,Config.JWT_SECRET_KEY,algorithm="HS256")
 

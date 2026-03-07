@@ -1,6 +1,6 @@
 from app import create_app
 from app.models import User,Role,Permission
-from extenstions import db
+from extensions import db
 
 
 application = create_app()

@@ -1,5 +1,5 @@
 from flask import Flask,render_template,url_for
-from extenstions import db
+from extensions import db
 from config import Config
 from .auth import auth_bp
 
