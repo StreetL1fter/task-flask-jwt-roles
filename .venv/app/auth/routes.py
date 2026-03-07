@@ -6,6 +6,7 @@ from config import Config
 import jwt
 from datetime import timedelta,datetime,timezone
 from functools import wraps
+from app.services.auth_service import AuthService
 
 def require_auth(f):
     @wraps(f)
@@ -83,30 +84,27 @@ def register():
         return jsonify({'message':"Email не валиден"}), 400
     if type(email) != str:
         return jsonify({'message': "Email должен быть строковым типом данных"})
+    
     if 'password' not in data:
         return jsonify({'message': 'Заполните все поля'}),400
     if 'first_name' not in data or 'last_name' not in data:
         return jsonify({'message': 'Заполните все поля'}),400
     
     
-
+    password = data['password']
     first_name = data["first_name"]
     last_name = data["last_name"]
 
     if type(first_name) != str or type(last_name) != str:
         return jsonify({"message": "Должно быть текстом быть текстом"})
     
-    if User.query.filter_by(email=email).first():
-        return jsonify({'message': 'Дубликат'}), 409
+    user,error_message = AuthService.register(email,password,first_name,last_name)
     
-    user = User(email=email,
-                first_name = first_name,
-                last_name = last_name,
-                is_active=True)
-    user.set_password(data['password'])
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({'message': 'User registered successful','user_id': user.id}),201    
+    if error_message:
+        return jsonify({'message': error_message}), 409
+    
+    return jsonify({'message': 'User registered successful','user_id': user.id}),201 
+      
 
 
 @auth_bp.route('/login',methods=['POST'])
