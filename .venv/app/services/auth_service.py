@@ -1,4 +1,4 @@
-from app.models import User,Role
+from app.models import User,Role,Blacklistedtoken
 from extensions import db
 from flask import request,jsonify
 from app.auth import routes
@@ -18,3 +18,14 @@ class AuthService:
         db.session.add(user)
         db.session.commit()
         return user,None  
+
+    def blacklisted(token):
+
+        if Blacklistedtoken.query.filter_by(token=token).first():
+            return jsonify({'message': "Дубликат"}), 409
+        
+        black_list = Blacklistedtoken(token=token)
+        db.session.add(black_list)
+        db.session.commit()
+        return black_list,None
+

@@ -1,7 +1,7 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash 
-
-
+from datetime import datetime,timedelta,timezone
+import os
 
 
 users_roles = db.Table('users_roles',
@@ -57,3 +57,14 @@ class Permission(db.Model):
     __tablename__ = 'permissions'
     id = db.Column(db.Integer,primary_key=True)
     name = db.Column(db.String(100),nullable=False,unique=True)
+
+
+
+class Blacklistedtoken(db.Model):
+    __tablename__ = 'black_listed_token'
+    id = db.Column(db.Integer,primary_key=True)
+    jwt_token_id = db.Column(db.String(64),nullable=False,unique=True)
+    blacklisted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+

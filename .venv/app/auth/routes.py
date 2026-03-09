@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from . import auth_bp
-from app.models import User,Role
+from app.models import User,Role,Blacklistedtoken
 from extensions import db
 from config import Config  
 import jwt
@@ -18,13 +18,20 @@ def require_auth(f):
         
         token = auth_header.split(' ')[1]
         
+        
         try:
             
             payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
             user = User.query.get(payload['user_id'])
-            
+            jti = payload['jti']
+            is_blacklisted = Blacklistedtoken.query.filter_by(jwt_token_id=jti).first()
+
             if not user or not user.is_active:
                 return jsonify({'message': 'Пользователь удален или не найден'}), 401
+            
+            if is_blacklisted is not None:
+                return jsonify({"message": "Ошибка авторизаций"}),401
+
             return f(user, *args, **kwargs)
             
         except jwt.ExpiredSignatureError:
@@ -70,7 +77,26 @@ def require_permission(permission_name):
     return decorator
             
 
-            
+@auth_bp.route('/logout',methods=["POST"])
+def logout():
+
+    data = request.headers.get('Authorization').split(' ')[1]
+
+    token = jwt.decode(data,Config.JWT_SECRET_KEY,algorithm="HS256")
+    
+    jti = token['jti']
+
+    try:
+        if jti is not None:
+            new_entry = Blacklistedtoken(jwt_token_id = jti)
+            db.session.add(new_entry)
+            db.session.commit()
+            return jsonify({"message":"Successfully logged out"}),200
+    except:
+        return jsonify({"message": "500 Internal Server Error"}),500
+
+   
+    
 
 
 
