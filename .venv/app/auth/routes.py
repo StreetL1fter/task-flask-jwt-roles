@@ -137,6 +137,7 @@ def register_routes(limiter):
     @auth_bp.route('/login',methods=['POST'])
     @limiter.limit("10 per minute")
     def login():
+        
         data = request.get_json()
         if "email" not in data or "password" not in data:
             return jsonify({'message': 'Email и пароль - обязательны'}), 400
