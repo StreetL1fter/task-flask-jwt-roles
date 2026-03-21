@@ -6,11 +6,22 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from .auth.routes import register_routes
 from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler as RF
+import os
 
 load_dotenv()
 
 def create_app():
     application = Flask(__name__)
+    if not os.path.exists("logs"):
+        os.mkdir("logs")
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+    file_handler = RF('logs/app.log',maxBytes=10240, backupCount=10,encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.INFO)
+    application.logger.addHandler(file_handler)
+    application.logger.setLevel(logging.INFO)
     application.config.from_object(Config)
     import app.models
     db.init_app(application)

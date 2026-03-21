@@ -10,7 +10,7 @@ from functools import wraps
 from app.services.auth_service import AuthService
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
+import uuid
 
 
 
@@ -89,11 +89,11 @@ def register_routes(limiter):
     def logout():
 
         data = request.headers.get('Authorization').split(' ')[1]
-
-        token = jwt.decode(data,Config.JWT_SECRET_KEY,algorithm="HS256")
-        
-        jti = token['jti']
-
+        try:
+            token = jwt.decode(data,Config.JWT_SECRET_KEY,algorithm="HS256")
+            jti = token.get("jti")
+        except KeyError as ke:
+            return jsonify({"message": "Токер некорректен"})
         try:
             if jti is not None:
                 new_entry = Blacklistedtoken(jwt_token_id = jti)
@@ -137,7 +137,8 @@ def register_routes(limiter):
     @auth_bp.route('/login',methods=['POST'])
     @limiter.limit("10 per minute")
     def login():
-        
+        from flask import current_app
+        current_app.logger.info("Тестовый лог")
         data = request.get_json()
         if "email" not in data or "password" not in data:
             return jsonify({'message': 'Email и пароль - обязательны'}), 400
@@ -154,7 +155,9 @@ def register_routes(limiter):
 
         payload = {
             'user_id': exists.id,
-            'exp': datetime.now(timezone.utc)+ timedelta(hours=1)
+            'exp': datetime.now(timezone.utc)+ timedelta(hours=1),
+            'jti': str(uuid.uuid4()),
+            
         }
         token = jwt.encode(payload,Config.JWT_SECRET_KEY,algorithm="HS256")
 
